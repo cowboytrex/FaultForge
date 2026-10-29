@@ -3,9 +3,14 @@ from flask import Flask, jsonify, request
 from redis.exceptions import RedisError
 from database import get_services_from_db
 from fallback import save_to_cache, get_cached_services
+from circuit_breaker import CircuitBreaker, CircuitOpenError
 
 app = Flask(__name__)
 
+db_breaker = CircuitBreaker(
+    failure_threshold=3,
+    recovery_timeout=10
+)
 
 @app.route("/")
 def home():
@@ -25,7 +30,12 @@ def services():
         if simulate_failure:
             raise ConnectionError("Simulated database failure")
 
-        data = get_services_from_db()
+        def database_operation():
+            if request.args.get("fail") == "true":
+                raise ConnectionError("Simulated database failure")
+
+            return get_services_from_db()
+        data = db_breaker.call(database_operation)
 
         # A Redis failure should not prevent a healthy database response.
         try:
@@ -42,7 +52,7 @@ def services():
             "cache_status": cache_status
         }), 200
 
-    except (ConnectionError, psycopg.OperationalError):
+    except (ConnectionError, psycopg.OperationalError, CircuitOpenError):
 
         # PostgreSQL is unavailable; attempt Redis fallback.
         try:
