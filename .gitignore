@@ -52,6 +52,11 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Local environment variables
+.env
+.env.*
+!.env.example
+
 # Translations
 *.mo
 *.pot
