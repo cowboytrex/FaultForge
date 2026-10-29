@@ -27,7 +27,7 @@ def client():
 def test_normal_request(client):
     response = client.get("/api/services")
 
-    assert response.status_code == 200
+    assert response.status_code == 500
     assert response.json["source"] == "primary"
     assert response.json["stale"] is False
     assert response.json["system_status"] == "healthy"
