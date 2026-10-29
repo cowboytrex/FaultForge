@@ -11,3 +11,8 @@ def save_to_cache(data):
 def get_cached_services():
     """Return the lastest successful cached response."""
     return deepcopy(_cached_services)
+
+def clear_cache():
+    """Remove cached data so tests start with an empty cache."""
+    global _cached_services
+    _cached_services = None
