@@ -18,6 +18,14 @@ SERVICES = [
     }
 ]
 
-def get_services():
-    """Retrieve service records from our simulated database."""
+def get_services(database_available=True):
+    """
+    Simulate retrieving service records from a database.
+
+    Raises ConnectionError when the database is unavailable.
+    """
+
+    if not database_available:
+        raise ConnectionError("Database conncection failed")
+    
     return SERVICES
