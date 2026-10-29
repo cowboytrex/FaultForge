@@ -1,5 +1,6 @@
+import psycopg
 from flask import Flask, jsonify, request
-from data_source import get_services
+from database import get_services_from_db
 from fallback import save_to_cache, get_cached_services
 
 app = Flask(__name__)
@@ -13,14 +14,16 @@ def home():
     })
 
 
+
 @app.route("/api/services")
 def services():
     simulate_failure = request.args.get("fail") == "true"
 
     try:
-        data = get_services(
-            database_available=not simulate_failure
-        )
+        if simulate_failure:
+            raise ConnectionError("Simulated database failure")
+
+        data = get_services_from_db()
 
         save_to_cache(data)
 
@@ -31,7 +34,7 @@ def services():
             "system_status": "healthy"
         }), 200
 
-    except ConnectionError:
+    except (ConnectionError, psycopg.OperationalError):
         cached_data = get_cached_services()
 
         if cached_data is not None:
