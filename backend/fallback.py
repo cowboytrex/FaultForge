@@ -2,7 +2,7 @@ from copy import deepcopy
 
 _cached_services = None
 
-def save_to_cache(date):
+def save_to_cache(data):
     """Save a copy of the lastest successful database response."""
     global _cached_services
     _cached_services = deepcopy(data)
