@@ -1,4 +1,4 @@
-
+from structured_logger import logger
 from datetime import datetime, timezone
 from threading import Lock
 
@@ -18,6 +18,17 @@ def log_event(event_type, message, severity="info"):
 
     with events_lock:
         save_event(event)
+
+    level = {
+        "info": "info",
+        "warning": "warning",
+        "critical": "critical"
+    }.get(severity, "info")
+
+    getattr(logger, level)(
+        message,
+        extra={"event_type": event_type}
+    )
 
     return event
 

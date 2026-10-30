@@ -1,5 +1,6 @@
 import time
 import psycopg
+import os
 from flask import Flask, jsonify, request, render_template
 from redis.exceptions import RedisError
 from database import get_services_from_db
@@ -44,8 +45,22 @@ def events_api():
 
 
 @app.route("/api/services")
-def services():
+def get_services():
     simulate_failure = request.args.get("fail") == "true"
+
+    if simulate_failure:
+        enabled = (
+            os.getenv("ENABLE_FAULT_INJECTION", "false").lower()
+            == "true"
+        )
+
+        if not enabled:
+            return jsonify({
+                "error": "Fault injection is disabled"
+            }), 403
+
+    # Keep your existing database, Redis,
+    # and circuit breaker logic below.
 
     try:
         def database_operation():
@@ -97,9 +112,23 @@ def services():
 
 @app.route("/api/simulate-failure", methods=["POST"])
 def simulate_failure():
+    # Step 1: Check whether fault injection is enabled.
+    enabled = (
+        os.getenv("ENABLE_FAULT_INJECTION", "false").lower()
+        == "true"
+    )
+
+    # Step 2: Reject requests when disabled.
+    if not enabled:
+        return jsonify({
+            "error": "Fault injection is disabled"
+        }), 403
+
+    # Step 3: Simulate a database failure when enabled.
     with app.test_client() as client:
         response = client.get("/api/services?fail=true")
 
+    # Step 4: Return the simulation results.
     return jsonify({
         "message": "Simulated database failure request completed",
         "request_status": response.status_code,
@@ -109,6 +138,7 @@ def simulate_failure():
             "failure_count": db_breaker.failure_count
         }
     }), 200
+
 
 @app.route("/api/monitoring")
 def monitoring():
