@@ -57,6 +57,42 @@
             </div>
         </section>
             
+
+        <section class="metrics-section">
+            <h2>Reliability Metrics</h2>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Database Failures</h3>
+                    <p id="metric-failures">0</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Circuit Breaker Trips</h3>
+                    <p id="metric-trips">0</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Successful Recoveries</h3>
+                    <p id="metric-recoveries">0</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Recovery Rate</h3>
+                    <p id="metric-recovery-rate">0%</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="trends-section">
+            <h2>Reliability Trends</h2>
+            <p>Database failures and circuit breaker trips over the last 7 days.</p>
+
+            <div class="chart-container">
+                <canvas id="reliabilityChart"></canvas>
+            </div>
+        </section>
+
         <section class="monitoring-card">
             <h2>Incident Timeline</h2>
             <p>Recent database failures and recovery events.</p>
@@ -68,6 +104,7 @@
 
         <p id="connection-status">Connecting to monitoring API...</p>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
 
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>

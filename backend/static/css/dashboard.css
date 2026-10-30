@@ -181,3 +181,83 @@ header p {
 .severity-info {
     border-left-color: #22c55e;
 }
+
+
+.metrics-section {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.metrics-section h2 {
+    margin-bottom: 18px;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.metric-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 22px;
+}
+
+.metric-card h3 {
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.metric-card p {
+    color: #f8fafc;
+    font-size: 30px;
+    font-weight: 700;
+    margin: 0;
+}
+
+@media (max-width: 900px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+.trends-section {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.trends-section h2 {
+    margin-bottom: 10px;
+}
+
+.trends-section p {
+    color: #94a3b8;
+    margin-bottom: 20px;
+}
+
+.chart-container {
+    position: relative;
+    height: 320px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+@media (max-width: 480px) {
+    .chart-container {
+        height: 260px;
+        padding: 12px;
+    }
+}

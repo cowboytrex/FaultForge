@@ -57,6 +57,8 @@ cover/
 .env.*
 !.env.example
 
+data/*.db
+
 # Translations
 *.mo
 *.pot
