@@ -1,3 +1,4 @@
+
 import sys
 from pathlib import Path
 
@@ -8,17 +9,20 @@ sys.path.insert(
     str(Path(__file__).resolve().parents[1] / "backend")
 )
 
-from event_logger import events, events_lock, log_event, get_events
+import event_store
+from event_logger import log_event, get_events
 from circuit_breaker import CircuitBreaker
 
+
 @pytest.fixture(autouse=True)
-def clear_events():
-    """Reset event history before and after each test."""
-    with events_lock:
-        events.clear()
+def isolated_event_database(tmp_path, monkeypatch):
+    """Use a fresh temporary SQLite database for every test."""
+    test_db = tmp_path / "test_incidents.db"
+
+    monkeypatch.setattr(event_store, "DB_PATH", test_db)
+
     yield
-    with events_lock:
-        events.clear()
+
 
 def test_event_recording():
     log_event("database_failure", "Database unavaliable", "warning")
@@ -98,3 +102,22 @@ def test_successful_recovery(monkeypatch):
 
     assert "recovery_attempt" in event_types
     assert "database_recovered" in event_types
+
+
+def test_events_persist_across_reads():
+    """Events should survive separate SQLite connections."""
+    log_event(
+        "database_failure",
+        "PostgreSQL connection lost",
+        "warning"
+    )
+
+    # Read from a separate SQLite connection.
+    stored_events = event_store.load_events()
+
+    assert len(stored_events) == 1
+    assert stored_events[0]["type"] == "database_failure"
+    assert stored_events[0]["message"] == "PostgreSQL connection lost"
+
+    # Confirm the event is also available through the logger.
+    assert get_events() == stored_events

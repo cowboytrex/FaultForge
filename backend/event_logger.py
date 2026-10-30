@@ -1,14 +1,14 @@
-from collections import deque
+
 from datetime import datetime, timezone
 from threading import Lock
 
-# Keep the 100 most recent reliability events.
-events = deque(maxlen=100)
+from event_store import save_event, load_events
+
 events_lock = Lock()
 
 
 def log_event(event_type, message, severity="info"):
-    """Record a reliability event."""
+    """Record an incident in persistent storage."""
     event = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "type": event_type,
@@ -17,12 +17,12 @@ def log_event(event_type, message, severity="info"):
     }
 
     with events_lock:
-        events.appendleft(event)
+        save_event(event)
 
     return event
 
 
 def get_events():
-    """Return a snapshot of the latest events."""
+    """Retrieve the 100 most recent incidents."""
     with events_lock:
-        return list(events)
+        return load_events(limit=100)
