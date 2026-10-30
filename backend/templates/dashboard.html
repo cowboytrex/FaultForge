@@ -139,6 +139,43 @@
             <span id="latency-total">--</span>
         </p>
 
+
+        <div class="performance-alert" id="performance-alert">
+            <div class="performance-alert-header">
+                <h3>Performance Alert Status</h3>
+                <span id="performance-alert-status" class="alert-status no-data">
+                    NO DATA
+                </span>
+            </div>
+
+            <p id="performance-alert-message">
+                Waiting for latency measurements...
+            </p>
+
+            <p class="performance-alert-details">
+                Warning threshold: 200 ms |
+                Critical threshold: 500 ms
+            </p>
+        </div>
+
+
+        <!-- Performance Alert History -->
+        <div class="performance-alert-history">
+            <div class="performance-alert-history-header">
+                <h3>Performance Alert History</h3>
+                <span id="alert-history-count">0 events</span>
+            </div>
+
+            <p>
+                Track changes in API performance and recovery events.
+            </p>
+
+            <div id="performance-alert-history-list">
+                <p>No performance alerts recorded yet.</p>
+            </div>
+        </div>
+
+
         <div class="latency-chart-section">
             <h3>Request Latency Over Time</h3>
             <p>Recent HTTP request response times in milliseconds.</p>
@@ -147,8 +184,11 @@
                 <canvas id="latencyHistoryChart"></canvas>
             </div>
         </div>
-
-        </section>
+    <p>
+        Requests measured:
+        <span id="latency-total">--</span>
+    </p>
+            </section>
 
 
 

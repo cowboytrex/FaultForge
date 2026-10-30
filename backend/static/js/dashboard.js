@@ -594,6 +594,156 @@ async function updateLatencyHistoryChart() {
     }
 }
 
+
+async function updatePerformanceAlert() {
+    try {
+        const response = await fetch("/api/metrics/latency/alert");
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch performance alert");
+        }
+
+        const data = await response.json();
+
+        const statusElement = document.getElementById(
+            "performance-alert-status"
+        );
+
+        const messageElement = document.getElementById(
+            "performance-alert-message"
+        );
+
+        if (!statusElement || !messageElement) {
+            return;
+        }
+
+        const validStatuses = [
+            "healthy",
+            "warning",
+            "critical",
+            "no_data"
+        ];
+
+        const status = validStatuses.includes(data.status)
+            ? data.status
+            : "no_data";
+
+        statusElement.textContent =
+            status === "no_data"
+                ? "NO DATA"
+                : status.toUpperCase();
+
+        statusElement.className =
+            "alert-status " + status.replace("_", "-");
+
+        messageElement.textContent = data.message;
+
+    } catch (error) {
+        console.error("Performance alert update failed:", error);
+    }
+}
+
+
+
+async function updatePerformanceAlertHistory() {
+    const list = document.getElementById(
+        "performance-alert-history-list"
+    );
+    const count = document.getElementById(
+        "alert-history-count"
+    );
+
+    if (!list || !count) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            "/api/metrics/latency/alerts/history"
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch alert history");
+        }
+
+        const data = await response.json();
+        const events = Array.isArray(data.history)
+            ? data.history
+            : [];
+
+        count.textContent = `${events.length} events`;
+
+        if (events.length === 0) {
+            list.textContent = "No performance alerts recorded yet.";
+            return;
+        }
+
+        // Display newest alerts first.
+        const recentEvents = [...events].reverse().slice(0, 10);
+
+        list.replaceChildren();
+
+        recentEvents.forEach((event) => {
+            const item = document.createElement("div");
+
+            const validStatuses = [
+                "healthy", "warning", "critical", "no_data"
+            ];
+
+            const status = validStatuses.includes(event.status)
+                ? event.status
+                : "no_data";
+
+            item.className =
+                "alert-history-item " + status.replace("_", "-");
+
+            const header = document.createElement("div");
+            header.className = "alert-history-item-header";
+
+            const title = document.createElement("strong");
+            title.textContent = status.toUpperCase();
+
+            const timestamp = document.createElement("span");
+            timestamp.className = "alert-history-item-time";
+
+            const date = new Date(event.timestamp);
+            timestamp.textContent = Number.isNaN(date.getTime())
+                ? "Unknown time"
+                : date.toLocaleString();
+
+            header.append(title, timestamp);
+
+            const details = document.createElement("p");
+            details.className = "alert-history-item-details";
+
+            const previous = event.previous_status ?? "none";
+            const latency = event.p95_latency_ms == null
+                ? "N/A"
+                : `${event.p95_latency_ms} ms`;
+
+            details.textContent =
+                `Previous: ${previous} | P95 latency: ${latency}`;
+
+            item.append(header, details);
+            list.appendChild(item);
+        });
+
+    } catch (error) {
+        console.error("Performance alert history update failed:", error);
+        list.textContent = "Unable to load performance alert history.";
+    }
+}
+
+// Load immediately, then refresh every 5 seconds.
+updatePerformanceAlertHistory();
+setInterval(updatePerformanceAlertHistory, 5000);
+
+
+// Load immediately and refresh every 5 seconds.
+updatePerformanceAlert();
+setInterval(updatePerformanceAlert, 5000);
+
+
 // Load immediately and refresh every 5 seconds.
 updateLatencyHistoryChart();
 setInterval(updateLatencyHistoryChart, 5000);

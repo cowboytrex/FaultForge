@@ -15,6 +15,8 @@ from dependency_monitor import check_dependencies
 from chaos_engine import chaos_engine
 from latency_collector import latency_collector
 from backend.experiment_store import load_experiments
+from backend.alert_history import alert_history
+from backend.performance_alerts import evaluate_latency_alert
 
 
 app = Flask(__name__)
@@ -55,6 +57,47 @@ def latency_history_api():
     return jsonify({
         "total": len(history),
         "history": history,
+    })
+
+
+
+@app.route("/api/metrics/latency/alert")
+def latency_alert_api():
+    """Return current latency status and record status changes."""
+    metrics = latency_collector.metrics()
+
+    if metrics["total_requests"] == 0:
+        result = {
+            "status": "no_data",
+            "message": "No latency measurements available",
+            "p95_latency_ms": None,
+            "warning_threshold_ms": 200,
+            "critical_threshold_ms": 500,
+        }
+    else:
+        result = evaluate_latency_alert(
+            p95_latency_ms=metrics["p95_latency_ms"],
+            warning_threshold_ms=200,
+            critical_threshold_ms=500,
+        )
+
+    # Record only when the alert status changes.
+    alert_history.record(
+        status=result["status"],
+        p95_latency_ms=result["p95_latency_ms"],
+    )
+
+    return jsonify(result)
+
+
+@app.route("/api/metrics/latency/alerts/history")
+def latency_alert_history_api():
+    """Return recorded performance alert transitions."""
+    events = alert_history.history()
+
+    return jsonify({
+        "total": len(events),
+        "history": events,
     })
 
 
