@@ -3,3 +3,4 @@ pytest
 psycopg[binary]
 redis
 fakeredis
+pytest-cov>=7.0,<8.0

@@ -28,5 +28,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Run automated tests
-        run: python -m pytest -v
+      - name: Run automated tests with coverage
+        run: |
+          python -m pytest -v \
+            --cov=backend \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=85
