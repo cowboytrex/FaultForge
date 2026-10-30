@@ -103,6 +103,43 @@
         </section>
         
 
+        <!-- Live HTTP Request Performance -->
+        <section class="metrics-section">
+            <h2>Live API Performance</h2>
+            <p>
+                Response times from recent HTTP requests.
+                Metrics are collected in memory.
+            </p>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Average Latency</h3>
+                    <p id="latency-average">--</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>P95 Latency</h3>
+                    <p id="latency-p95">--</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Maximum Latency</h3>
+                    <p id="latency-max">--</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Slow Requests</h3>
+                    <p id="latency-slow">--</p>
+                </div>
+            </div>
+
+            <p>
+                Requests measured:
+                <span id="latency-total">--</span>
+            </p>
+        </section>
+
+
         <!-- Chaos Engineering Experiment History -->
         <section class="monitoring-card">
             <h2>Chaos Experiment History</h2>

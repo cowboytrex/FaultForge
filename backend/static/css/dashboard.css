@@ -726,3 +726,44 @@ button:focus-visible {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ========================================
+   Live API Performance — Layout Fix
+   ======================================== */
+
+/* Keep existing reliability metrics in row 2 */
+.dashboard > .metrics-section:has(#metric-failures) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+}
+
+/* Place live latency metrics in their own row */
+.dashboard > .metrics-section:has(#latency-average) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+}
+
+/* Move circuit breaker and fault injection down */
+.dashboard > .monitoring-card:has(#breaker-state),
+.dashboard > .monitoring-card:has(#simulate-failure-btn) {
+    grid-row: 4;
+}
+
+/* Move chart and incident timeline down */
+.dashboard > .trends-section,
+.dashboard > .monitoring-card:has(#incident-timeline) {
+    grid-row: 5;
+}
+
+/* On smaller screens, allow automatic row placement */
+@media (max-width: 1000px) {
+    .dashboard > .metrics-section:has(#metric-failures),
+    .dashboard > .metrics-section:has(#latency-average),
+    .dashboard > .monitoring-card:has(#breaker-state),
+    .dashboard > .monitoring-card:has(#simulate-failure-btn),
+    .dashboard > .trends-section,
+    .dashboard > .monitoring-card:has(#incident-timeline) {
+        grid-row: auto;
+    }
+}

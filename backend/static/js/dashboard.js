@@ -481,3 +481,43 @@ updateExperimentHistory();
 
 // Refresh every 10 seconds
 setInterval(updateExperimentHistory, 10000);
+
+
+// Live HTTP request latency metrics
+async function updateLatencyMetrics() {
+    try {
+        const response = await fetch("/api/metrics/latency", {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        document.getElementById("latency-average").textContent =
+            `${data.average_latency_ms.toFixed(2)} ms`;
+
+        document.getElementById("latency-p95").textContent =
+            `${data.p95_latency_ms.toFixed(2)} ms`;
+
+        document.getElementById("latency-max").textContent =
+            `${data.max_latency_ms.toFixed(2)} ms`;
+
+        document.getElementById("latency-slow").textContent =
+            data.slow_requests;
+
+        document.getElementById("latency-total").textContent =
+            data.total_requests;
+
+    } catch (error) {
+        console.error("Latency metrics update failed:", error);
+    }
+}
+
+// Load latency metrics when the dashboard opens
+updateLatencyMetrics();
+
+// Refresh every 2 seconds
+setInterval(updateLatencyMetrics, 2000);

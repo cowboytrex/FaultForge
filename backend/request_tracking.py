@@ -4,7 +4,7 @@ import uuid
 
 from flask import g, request
 from structured_logger import logger
-
+from latency_collector import latency_collector
 
 def register_request_tracking(app):
     """Register request tracking hooks."""
@@ -36,6 +36,8 @@ def register_request_tracking(app):
                 if start_time is not None
                 else None
             )
+            if duration_ms is not None:
+                latency_collector.record(duration_ms)
 
             logger.info(
                 "Request completed",

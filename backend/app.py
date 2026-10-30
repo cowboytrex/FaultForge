@@ -13,6 +13,7 @@ from metrics import calculate_metrics
 from metrics import calculate_metrics, calculate_daily_trends
 from dependency_monitor import check_dependencies
 from chaos_engine import chaos_engine
+from latency_collector import latency_collector
 from backend.experiment_store import load_experiments
 
 
@@ -28,15 +29,22 @@ db_breaker = CircuitBreaker(
 def dashboard():
     return render_template("dashboard.html")
 
+@app.route("/api/metrics")
+def metrics():
+    return jsonify(calculate_metrics())
+
+
 @app.route("/api/metrics/trends")
 def metrics_trends():
     return jsonify({
         "trends": calculate_daily_trends()
     })
 
-@app.route("/api/metrics")
-def metrics():
-    return jsonify(calculate_metrics())
+
+@app.route("/api/metrics/latency")
+def latency_metrics_api():
+    """Return performance metrics for recent HTTP requests."""
+    return jsonify(latency_collector.metrics())
 
 @app.route("/")
 def home():
