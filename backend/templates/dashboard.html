@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaultForge | Reliability Dashboard</title>
+
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <main class="dashboard">
+        <header>
+            <h1>FaultForge</h1>
+            <p>Reliability Engineering Dashboard</p>
+        </header>
+
+
+        <section class="monitoring-card">
+            <h2>Fault Injection</h2>
+            <p>Simulate a database failure to test system resilience.</p>
+
+            <button id="simulate-failure-btn" type="button">
+            Simulate Database Failure
+            </button>
+
+
+            <button id="test-recovery-btn" type="button">
+            Test Database Recovery
+            </button>
+
+
+            <p id="simulation-result" role="status">
+                No failures simulated yet.
+            </p>
+        </section>
+
+        <section class="monitoring-card">
+            <h2>Circuit Breaker</h2>
+
+            <p>State: <strong id="breaker-state">Loading...</strong></p>
+            <p>Failures: <span id="failure-count">--</span></p>
+            <p>Threshold: <span id="failure-threshold">--</span></p>
+            <p>Recovery Timeout: <span id="recovery-timeout">--</span>s</p>
+
+    <!-- Recovery countdown -->
+            <div id="recovery-container" style="display: none;">
+                <p>
+                    Recovery available in:
+                    <strong id="recovery-countdown">0s</strong>
+                </p>
+
+                <div class="recovery-progress">
+                    <div id="recovery-progress-bar"></div>
+                </div>
+            </div>
+        </section>
+            
+        <section class="monitoring-card">
+            <h2>Incident Timeline</h2>
+            <p>Recent database failures and recovery events.</p>
+
+            <div id="incident-timeline" aria-live="off">
+                <p>Loading incident events...</p>
+            </div>
+        </section>
+
+        <p id="connection-status">Connecting to monitoring API...</p>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
