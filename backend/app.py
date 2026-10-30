@@ -12,6 +12,7 @@ from request_tracking import register_request_tracking
 from metrics import calculate_metrics
 from metrics import calculate_metrics, calculate_daily_trends
 from dependency_monitor import check_dependencies
+from chaos_engine import chaos_engine
 
 
 app = Flask(__name__)
@@ -63,14 +64,21 @@ def get_services():
     # Keep your existing database, Redis,
     # and circuit breaker logic below.
 
+    
     try:
         def database_operation():
             if request.args.get("fail") == "true":
                 raise ConnectionError("Simulated database failure")
 
             return get_services_from_db()
-        
-        data = db_breaker.call(database_operation)
+
+        if app.config["ENABLE_FAULT_INJECTION"]:
+            data = db_breaker.call(
+                lambda: chaos_engine.execute(database_operation)
+            )
+        else:
+            data = db_breaker.call(database_operation)
+
 
         # A Redis failure should not prevent a healthy database response.
         try:
