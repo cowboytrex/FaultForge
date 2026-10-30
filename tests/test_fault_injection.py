@@ -20,13 +20,20 @@ def client():
         yield test_client
 
 
+
 def test_fault_injection_disabled(client, monkeypatch):
-    """Fault injection must be blocked by default."""
-    monkeypatch.delenv("ENABLE_FAULT_INJECTION", raising=False)
+    """Fault injection must be blocked when disabled."""
+    monkeypatch.setitem(
+        flask_module.app.config,
+        "ENABLE_FAULT_INJECTION",
+        False
+    )
 
     response = client.post("/api/simulate-failure")
 
     assert response.status_code == 403
+
+
     assert response.get_json()["error"] == (
         "Fault injection is disabled"
     )
@@ -34,7 +41,11 @@ def test_fault_injection_disabled(client, monkeypatch):
 
 def test_fault_injection_explicitly_disabled(client, monkeypatch):
     """Explicitly disabling fault injection must return 403."""
-    monkeypatch.setenv("ENABLE_FAULT_INJECTION", "false")
+    monkeypatch.setitem(
+    flask_module.app.config,
+    "ENABLE_FAULT_INJECTION",
+    False
+)
 
     response = client.post("/api/simulate-failure")
 
@@ -43,7 +54,11 @@ def test_fault_injection_explicitly_disabled(client, monkeypatch):
 
 def test_fault_injection_enabled(client, monkeypatch):
     """Fault injection should work when explicitly enabled."""
-    monkeypatch.setenv("ENABLE_FAULT_INJECTION", "true")
+    monkeypatch.setitem(
+    flask_module.app.config,
+    "ENABLE_FAULT_INJECTION",
+    True
+)
 
     # Mock the internal service request so this test
     # doesn't need a real PostgreSQL connection.
@@ -74,7 +89,11 @@ def test_fault_injection_enabled(client, monkeypatch):
 def test_direct_fault_injection_blocked(client, monkeypatch):
     """Direct API requests cannot bypass fault-injection protection."""
 
-    monkeypatch.setenv("ENABLE_FAULT_INJECTION", "false")
+    monkeypatch.setitem(
+    flask_module.app.config,
+    "ENABLE_FAULT_INJECTION",
+    False
+)
 
     response = client.get("/api/services?fail=true")
 

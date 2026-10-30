@@ -1,6 +1,7 @@
 import time
 import psycopg
 import os
+from config import Config
 from flask import Flask, jsonify, request, render_template
 from redis.exceptions import RedisError
 from database import get_services_from_db
@@ -11,6 +12,8 @@ from metrics import calculate_metrics
 from metrics import calculate_metrics, calculate_daily_trends
 
 app = Flask(__name__)
+
+app.config.update(Config.from_environment())
 
 db_breaker = CircuitBreaker(
     failure_threshold=3,
@@ -49,12 +52,7 @@ def get_services():
     simulate_failure = request.args.get("fail") == "true"
 
     if simulate_failure:
-        enabled = (
-            os.getenv("ENABLE_FAULT_INJECTION", "false").lower()
-            == "true"
-        )
-
-        if not enabled:
+        if not app.config["ENABLE_FAULT_INJECTION"]:
             return jsonify({
                 "error": "Fault injection is disabled"
             }), 403
@@ -113,13 +111,7 @@ def get_services():
 @app.route("/api/simulate-failure", methods=["POST"])
 def simulate_failure():
     # Step 1: Check whether fault injection is enabled.
-    enabled = (
-        os.getenv("ENABLE_FAULT_INJECTION", "false").lower()
-        == "true"
-    )
-
-    # Step 2: Reject requests when disabled.
-    if not enabled:
+    if not app.config["ENABLE_FAULT_INJECTION"]:
         return jsonify({
             "error": "Fault injection is disabled"
         }), 403
