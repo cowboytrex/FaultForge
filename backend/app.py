@@ -143,6 +143,96 @@ def simulate_failure():
     }), 200
 
 
+@app.route("/api/chaos/reset", methods=["POST"])
+def reset_chaos():
+    """Disable active chaos experiments."""
+
+    if not (
+        app.config.get("ENABLE_FAULT_INJECTION", False)
+        and app.config.get("CHAOS_API_ENABLED", False)
+    ):
+        return jsonify({
+            "error": "Chaos configuration API is disabled"
+        }), 403
+
+    if request.remote_addr not in ("127.0.0.1", "::1"):
+        return jsonify({
+            "error": "Chaos reset is restricted to localhost"
+        }), 403
+
+    chaos_engine.configure(
+        enabled=False,
+        latency_ms=0,
+        failure_rate=0.0,
+    )
+
+    return jsonify({
+        "message": "Chaos experiments disabled",
+        "enabled": False,
+        "latency_ms": 0,
+        "failure_rate": 0.0,
+    }), 200
+
+
+@app.route("/api/chaos/configure", methods=["POST"])
+def configure_chaos():
+    """Configure controlled chaos experiments in local development."""
+
+    if not (
+        app.config.get("ENABLE_FAULT_INJECTION", False)
+        and app.config.get("CHAOS_API_ENABLED", False)
+    ):
+        return jsonify({
+            "error": "Chaos configuration API is disabled"
+        }), 403
+
+    # This endpoint is intended for local development only.
+    if request.remote_addr not in ("127.0.0.1", "::1"):
+        return jsonify({
+            "error": "Chaos configuration is restricted to localhost"
+        }), 403
+
+    payload = request.get_json(silent=True)
+
+    if not isinstance(payload, dict):
+        return jsonify({
+            "error": "A JSON object is required"
+        }), 400
+
+    enabled = payload.get("enabled", False)
+    latency_ms = payload.get("latency_ms", 0)
+    failure_rate = payload.get("failure_rate", 0.0)
+
+    if not isinstance(enabled, bool):
+        return jsonify({
+            "error": "enabled must be a boolean"
+        }), 400
+
+    # Reject booleans, which Python otherwise treats as numbers.
+    if (
+        type(latency_ms) not in (int, float)
+        or type(failure_rate) not in (int, float)
+    ):
+        return jsonify({
+            "error": "latency_ms and failure_rate must be numeric"
+        }), 400
+
+    try:
+        chaos_engine.configure(
+            enabled=enabled,
+            latency_ms=latency_ms,
+            failure_rate=failure_rate,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify({
+        "message": "Chaos configuration updated",
+        "enabled": chaos_engine.enabled,
+        "latency_ms": chaos_engine.latency_ms,
+        "failure_rate": chaos_engine.failure_rate,
+    }), 200
+
 @app.route("/health/live", methods=["GET"])
 def health_live():
     """Check whether the Flask application is running."""

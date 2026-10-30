@@ -22,3 +22,18 @@ class Config:
                 == "true"
             ),
         }
+
+    @classmethod
+    def from_environment(cls):
+        """Load configuration from environment variables."""
+        return {
+            "DEBUG": os.getenv("FLASK_DEBUG", "false").lower() == "true",
+            "ENABLE_FAULT_INJECTION": (
+                os.getenv("ENABLE_FAULT_INJECTION", "false").lower()
+                == "true"
+            ),
+            "CHAOS_API_ENABLED": (
+                os.getenv("CHAOS_API_ENABLED", "false").lower()
+                == "true"
+            ),
+        }
