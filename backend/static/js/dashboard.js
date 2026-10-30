@@ -215,5 +215,129 @@ async function updateIncidentTimeline() {
     }
 }
 
+
+async function updateMetrics() {
+    try {
+        const response = await fetch("/api/metrics");
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch reliability metrics");
+        }
+
+        const data = await response.json();
+
+        document.getElementById("metric-failures").textContent =
+            data.total_failures;
+
+        document.getElementById("metric-trips").textContent =
+            data.circuit_trips;
+
+        document.getElementById("metric-recoveries").textContent =
+            data.successful_recoveries;
+
+        document.getElementById("metric-recovery-rate").textContent =
+            `${data.recovery_rate}%`;
+
+    } catch (error) {
+        console.error("Metrics update failed:", error);
+    }
+}
+
+
+let reliabilityChart = null;
+
+async function updateReliabilityChart() {
+    try {
+        const response = await fetch("/api/metrics/trends");
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch reliability trends");
+        }
+
+        const data = await response.json();
+        const trends = data.trends;
+
+        const labels = trends.map(day => day.date.slice(5));
+        const failures = trends.map(day => day.failures);
+        const trips = trends.map(day => day.circuit_trips);
+
+        if (!reliabilityChart) {
+            const canvas = document.getElementById("reliabilityChart");
+
+            if (!canvas || typeof Chart === "undefined") {
+                return;
+            }
+
+            reliabilityChart = new Chart(canvas, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Database Failures",
+                            data: failures,
+                            borderColor: "#ef4444",
+                            backgroundColor: "rgba(239, 68, 68, 0.1)",
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: "Circuit Breaker Trips",
+                            data: trips,
+                            borderColor: "#38bdf8",
+                            backgroundColor: "rgba(56, 189, 248, 0.1)",
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: "#f8fafc"
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: "#94a3b8" },
+                            grid: { color: "#334155" }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: "#94a3b8",
+                                precision: 0
+                            },
+                            grid: { color: "#334155" }
+                        }
+                    }
+                }
+            });
+        } else {
+            reliabilityChart.data.labels = labels;
+            reliabilityChart.data.datasets[0].data = failures;
+            reliabilityChart.data.datasets[1].data = trips;
+            reliabilityChart.update();
+        }
+
+    } catch (error) {
+        console.error("Reliability chart update failed:", error);
+    }
+}
+
+updateReliabilityChart();
+setInterval(updateReliabilityChart, 5000);
+
+
+// Load metrics immediately.
+updateMetrics();
+
+// Refresh metrics every 2 seconds.
+setInterval(updateMetrics, 2000);
+
 updateIncidentTimeline();
 setInterval(updateIncidentTimeline, 2000);

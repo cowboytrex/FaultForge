@@ -6,6 +6,8 @@ from database import get_services_from_db
 from fallback import save_to_cache, get_cached_services
 from circuit_breaker import CircuitBreaker, CircuitOpenError
 from event_logger import log_event, get_events
+from metrics import calculate_metrics
+from metrics import calculate_metrics, calculate_daily_trends
 
 app = Flask(__name__)
 
@@ -16,6 +18,16 @@ db_breaker = CircuitBreaker(
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
+
+@app.route("/api/metrics/trends")
+def metrics_trends():
+    return jsonify({
+        "trends": calculate_daily_trends()
+    })
+
+@app.route("/api/metrics")
+def metrics():
+    return jsonify(calculate_metrics())
 
 @app.route("/")
 def home():
