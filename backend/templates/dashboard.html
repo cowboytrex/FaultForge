@@ -11,9 +11,18 @@
 </head>
 <body>
     <main class="dashboard">
-        <header>
-            <h1>FaultForge</h1>
-            <p>Reliability Engineering Dashboard</p>
+        
+        <header class="dashboard-header">
+            <div>
+                <h1>FaultForge</h1>
+                <p>Reliability Engineering Dashboard</p>
+            </div>
+
+            <div id="system-health" class="health-indicator health-unknown"
+                role="status" aria-live="polite">
+                <span class="health-dot" aria-hidden="true"></span>
+                <span id="system-health-text">Checking system...</span>
+            </div>
         </header>
 
 

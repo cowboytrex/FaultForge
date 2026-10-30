@@ -341,3 +341,57 @@ setInterval(updateMetrics, 2000);
 
 updateIncidentTimeline();
 setInterval(updateIncidentTimeline, 2000);
+
+async function updateSystemHealth() {
+    const indicator = document.getElementById("system-health");
+    const label = document.getElementById("system-health-text");
+
+    if (!indicator || !label) return;
+
+    try {
+        const response = await fetch("/health/ready", {
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+        const status = data.system_status;
+
+        console.log("FaultForge readiness:", {
+            httpStatus: response.status,
+            systemStatus: status,
+            response: data
+        });
+
+        indicator.classList.remove(
+            "health-healthy",
+            "health-degraded",
+            "health-unavailable",
+            "health-unknown"
+        );
+
+        if (status === "healthy") {
+            indicator.classList.add("health-healthy");
+            label.textContent = "System Healthy";
+        } else if (status === "degraded") {
+            indicator.classList.add("health-degraded");
+            label.textContent = "System Degraded";
+        } else {
+            indicator.classList.add("health-unavailable");
+            label.textContent = "System Unavailable";
+        }
+    } catch (error) {
+        indicator.classList.remove(
+            "health-healthy",
+            "health-degraded",
+            "health-unavailable",
+            "health-unknown"
+        );
+
+        indicator.classList.add("health-unknown");
+        label.textContent = "Health Unknown";
+        console.error("Health check failed:", error);
+    }
+}
+
+updateSystemHealth();
+setInterval(updateSystemHealth, 5000);
