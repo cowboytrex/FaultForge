@@ -8,13 +8,15 @@ from database import get_services_from_db
 from fallback import save_to_cache, get_cached_services
 from circuit_breaker import CircuitBreaker, CircuitOpenError
 from event_logger import log_event, get_events
+from request_tracking import register_request_tracking
 from metrics import calculate_metrics
 from metrics import calculate_metrics, calculate_daily_trends
 
-app = Flask(__name__)
 
+app = Flask(__name__)
 app.config.update(Config.from_environment())
 
+register_request_tracking(app)
 db_breaker = CircuitBreaker(
     failure_threshold=3,
     recovery_timeout=10

@@ -2,6 +2,7 @@
 import json
 import logging
 import sys
+
 from datetime import datetime, timezone
 
 
@@ -19,6 +20,15 @@ class JSONFormatter(logging.Formatter):
         if hasattr(record, "event_type"):
             log_data["event_type"] = record.event_type
 
+        for field in (
+            "request_id",
+            "method",
+            "path",
+            "status_code",
+        ):
+            if hasattr(record, field):
+                log_data[field] = getattr(record, field)
+                
         if record.exc_info:
             log_data["exception"] = self.formatException(
                 record.exc_info
