@@ -1,16 +1,23 @@
 import time
 import psycopg
+import os
+from config import Config
 from flask import Flask, jsonify, request, render_template
 from redis.exceptions import RedisError
 from database import get_services_from_db
 from fallback import save_to_cache, get_cached_services
 from circuit_breaker import CircuitBreaker, CircuitOpenError
 from event_logger import log_event, get_events
+from request_tracking import register_request_tracking
 from metrics import calculate_metrics
 from metrics import calculate_metrics, calculate_daily_trends
+from dependency_monitor import check_dependencies
+
 
 app = Flask(__name__)
+app.config.update(Config.from_environment())
 
+register_request_tracking(app)
 db_breaker = CircuitBreaker(
     failure_threshold=3,
     recovery_timeout=10
@@ -44,8 +51,17 @@ def events_api():
 
 
 @app.route("/api/services")
-def services():
+def get_services():
     simulate_failure = request.args.get("fail") == "true"
+
+    if simulate_failure:
+        if not app.config["ENABLE_FAULT_INJECTION"]:
+            return jsonify({
+                "error": "Fault injection is disabled"
+            }), 403
+
+    # Keep your existing database, Redis,
+    # and circuit breaker logic below.
 
     try:
         def database_operation():
@@ -97,9 +113,17 @@ def services():
 
 @app.route("/api/simulate-failure", methods=["POST"])
 def simulate_failure():
+    # Step 1: Check whether fault injection is enabled.
+    if not app.config["ENABLE_FAULT_INJECTION"]:
+        return jsonify({
+            "error": "Fault injection is disabled"
+        }), 403
+
+    # Step 3: Simulate a database failure when enabled.
     with app.test_client() as client:
         response = client.get("/api/services?fail=true")
 
+    # Step 4: Return the simulation results.
     return jsonify({
         "message": "Simulated database failure request completed",
         "request_status": response.status_code,
@@ -109,6 +133,36 @@ def simulate_failure():
             "failure_count": db_breaker.failure_count
         }
     }), 200
+
+
+@app.route("/health/live", methods=["GET"])
+def health_live():
+    """Check whether the Flask application is running."""
+    return jsonify({
+        "status": "alive",
+        "service": "faultforge"
+    }), 200
+
+
+
+@app.route("/health/ready", methods=["GET"])
+def health_ready():
+    """Check readiness without modifying circuit-breaker state."""
+
+    def database_check():
+        get_services_from_db()
+        return True
+
+    def cache_check():
+        return get_cached_services() is not None
+
+    result, status_code = check_dependencies(
+        database_check=database_check,
+        cache_check=cache_check,
+    )
+
+    return jsonify(result), status_code
+
 
 @app.route("/api/monitoring")
 def monitoring():
