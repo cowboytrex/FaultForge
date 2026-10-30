@@ -11,9 +11,18 @@
 </head>
 <body>
     <main class="dashboard">
-        <header>
-            <h1>FaultForge</h1>
-            <p>Reliability Engineering Dashboard</p>
+
+        <header class="dashboard-header">
+            <div>
+                <h1>FaultForge</h1>
+                <p>Reliability Engineering Dashboard</p>
+            </div>
+
+            <div id="system-health" class="health-indicator health-unknown"
+                role="status" aria-live="polite">
+                <span class="health-dot" aria-hidden="true"></span>
+                <span id="system-health-text">Checking system...</span>
+            </div>
         </header>
 
 
@@ -56,7 +65,7 @@
                 </div>
             </div>
         </section>
-            
+
 
         <section class="metrics-section">
             <h2>Reliability Metrics</h2>
@@ -92,6 +101,83 @@
                 <canvas id="reliabilityChart"></canvas>
             </div>
         </section>
+        
+
+        <!-- Live HTTP Request Performance -->
+        <section class="metrics-section">
+            <h2>Live API Performance</h2>
+            <p>
+                Response times from recent HTTP requests.
+                Metrics are collected in memory.
+            </p>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Average Latency</h3>
+                    <p id="latency-average">--</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>P95 Latency</h3>
+                    <p id="latency-p95">--</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Maximum Latency</h3>
+                    <p id="latency-max">--</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Slow Requests</h3>
+                    <p id="latency-slow">--</p>
+                </div>
+            </div>
+
+            <p>
+                Requests measured:
+                <span id="latency-total">--</span>
+            </p>
+        </section>
+
+
+        <!-- Chaos Engineering Experiment History -->
+        <section class="monitoring-card">
+            <h2>Chaos Experiment History</h2>
+
+            <p>
+                Review previous reliability experiments,
+                system availability, and response latency.
+            </p>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Total Experiments</h3>
+                    <p id="experiment-count">--</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Latest Availability</h3>
+                    <p id="experiment-availability">--</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Average Latency</h3>
+                    <p id="experiment-latency">--</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Cache Fallbacks</h3>
+                    <p id="experiment-fallbacks">--</p>
+                </div>
+            </div>
+
+            <h3>Previous Experiments</h3>
+
+            <div id="experiment-history" aria-live="polite">
+                <p>Loading experiment history...</p>
+            </div>
+        </section>
+
 
         <section class="monitoring-card">
             <h2>Incident Timeline</h2>

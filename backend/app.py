@@ -12,6 +12,9 @@ from request_tracking import register_request_tracking
 from metrics import calculate_metrics
 from metrics import calculate_metrics, calculate_daily_trends
 from dependency_monitor import check_dependencies
+from chaos_engine import chaos_engine
+from latency_collector import latency_collector
+from backend.experiment_store import load_experiments
 
 
 app = Flask(__name__)
@@ -26,15 +29,22 @@ db_breaker = CircuitBreaker(
 def dashboard():
     return render_template("dashboard.html")
 
+@app.route("/api/metrics")
+def metrics():
+    return jsonify(calculate_metrics())
+
+
 @app.route("/api/metrics/trends")
 def metrics_trends():
     return jsonify({
         "trends": calculate_daily_trends()
     })
 
-@app.route("/api/metrics")
-def metrics():
-    return jsonify(calculate_metrics())
+
+@app.route("/api/metrics/latency")
+def latency_metrics_api():
+    """Return performance metrics for recent HTTP requests."""
+    return jsonify(latency_collector.metrics())
 
 @app.route("/")
 def home():
@@ -63,14 +73,21 @@ def get_services():
     # Keep your existing database, Redis,
     # and circuit breaker logic below.
 
+    
     try:
         def database_operation():
             if request.args.get("fail") == "true":
                 raise ConnectionError("Simulated database failure")
 
             return get_services_from_db()
-        
-        data = db_breaker.call(database_operation)
+
+        if app.config["ENABLE_FAULT_INJECTION"]:
+            data = db_breaker.call(
+                lambda: chaos_engine.execute(database_operation)
+            )
+        else:
+            data = db_breaker.call(database_operation)
+
 
         # A Redis failure should not prevent a healthy database response.
         try:
@@ -135,6 +152,96 @@ def simulate_failure():
     }), 200
 
 
+@app.route("/api/chaos/reset", methods=["POST"])
+def reset_chaos():
+    """Disable active chaos experiments."""
+
+    if not (
+        app.config.get("ENABLE_FAULT_INJECTION", False)
+        and app.config.get("CHAOS_API_ENABLED", False)
+    ):
+        return jsonify({
+            "error": "Chaos configuration API is disabled"
+        }), 403
+
+    if request.remote_addr not in ("127.0.0.1", "::1"):
+        return jsonify({
+            "error": "Chaos reset is restricted to localhost"
+        }), 403
+
+    chaos_engine.configure(
+        enabled=False,
+        latency_ms=0,
+        failure_rate=0.0,
+    )
+
+    return jsonify({
+        "message": "Chaos experiments disabled",
+        "enabled": False,
+        "latency_ms": 0,
+        "failure_rate": 0.0,
+    }), 200
+
+
+@app.route("/api/chaos/configure", methods=["POST"])
+def configure_chaos():
+    """Configure controlled chaos experiments in local development."""
+
+    if not (
+        app.config.get("ENABLE_FAULT_INJECTION", False)
+        and app.config.get("CHAOS_API_ENABLED", False)
+    ):
+        return jsonify({
+            "error": "Chaos configuration API is disabled"
+        }), 403
+
+    # This endpoint is intended for local development only.
+    if request.remote_addr not in ("127.0.0.1", "::1"):
+        return jsonify({
+            "error": "Chaos configuration is restricted to localhost"
+        }), 403
+
+    payload = request.get_json(silent=True)
+
+    if not isinstance(payload, dict):
+        return jsonify({
+            "error": "A JSON object is required"
+        }), 400
+
+    enabled = payload.get("enabled", False)
+    latency_ms = payload.get("latency_ms", 0)
+    failure_rate = payload.get("failure_rate", 0.0)
+
+    if not isinstance(enabled, bool):
+        return jsonify({
+            "error": "enabled must be a boolean"
+        }), 400
+
+    # Reject booleans, which Python otherwise treats as numbers.
+    if (
+        type(latency_ms) not in (int, float)
+        or type(failure_rate) not in (int, float)
+    ):
+        return jsonify({
+            "error": "latency_ms and failure_rate must be numeric"
+        }), 400
+
+    try:
+        chaos_engine.configure(
+            enabled=enabled,
+            latency_ms=latency_ms,
+            failure_rate=failure_rate,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify({
+        "message": "Chaos configuration updated",
+        "enabled": chaos_engine.enabled,
+        "latency_ms": chaos_engine.latency_ms,
+        "failure_rate": chaos_engine.failure_rate,
+    }), 200
+
 @app.route("/health/live", methods=["GET"])
 def health_live():
     """Check whether the Flask application is running."""
@@ -196,3 +303,25 @@ if __name__ == "__main__":
         debug=True,
         use_reloader=False
     )
+
+
+@app.route("/api/chaos/experiments", methods=["GET"])
+def get_chaos_experiments():
+    """Return saved chaos engineering experiments."""
+    try:
+        experiments = load_experiments()
+
+        return jsonify({
+            "total": len(experiments),
+            "experiments": experiments,
+        }), 200
+
+    except (OSError, ValueError) as error:
+        app.logger.error(
+            "Failed to load experiment history: %s",
+            error,
+        )
+
+        return jsonify({
+            "error": "Unable to load experiment history"
+        }), 500

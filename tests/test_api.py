@@ -258,3 +258,17 @@ def test_api_circuit_breaker_recovery(client):
         assert db_breaker.state == "CLOSED"
         assert db_breaker.failure_count == 0
         assert mock_db.call_count == 4
+
+
+def test_monitoring_endpoint():
+    response = app.test_client().get("/api/monitoring")
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert "circuit_breaker" in data
+    assert data["circuit_breaker"]["state"] == "CLOSED"
+    assert data["circuit_breaker"]["failure_count"] == 0
+    assert data["circuit_breaker"]["failure_threshold"] == 3
+    assert data["circuit_breaker"]["recovery_timeout"] == 10

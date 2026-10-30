@@ -11,8 +11,10 @@ async function updateDashboard() {
             throw new Error(`HTTP ${response.status}`);
         }
 
+
         const data = await response.json();
         const breaker = data.circuit_breaker;
+
 
         // Update circuit breaker state
         const stateElement = document.getElementById("breaker-state");
@@ -341,3 +343,181 @@ setInterval(updateMetrics, 2000);
 
 updateIncidentTimeline();
 setInterval(updateIncidentTimeline, 2000);
+
+async function updateSystemHealth() {
+    const indicator = document.getElementById("system-health");
+    const label = document.getElementById("system-health-text");
+
+    if (!indicator || !label) return;
+
+    try {
+        const response = await fetch("/health/ready", {
+            cache: "no-store"
+        });
+
+        const data = await response.json();
+        const status = data.system_status;
+
+        console.log("FaultForge readiness:", {
+            httpStatus: response.status,
+            systemStatus: status,
+            response: data
+        });
+
+        indicator.classList.remove(
+            "health-healthy",
+            "health-degraded",
+            "health-unavailable",
+            "health-unknown"
+        );
+
+        if (status === "healthy") {
+            indicator.classList.add("health-healthy");
+            label.textContent = "System Healthy";
+        } else if (status === "degraded") {
+            indicator.classList.add("health-degraded");
+            label.textContent = "System Degraded";
+        } else {
+            indicator.classList.add("health-unavailable");
+            label.textContent = "System Unavailable";
+        }
+    } catch (error) {
+        indicator.classList.remove(
+            "health-healthy",
+            "health-degraded",
+            "health-unavailable",
+            "health-unknown"
+        );
+
+        indicator.classList.add("health-unknown");
+        label.textContent = "Health Unknown";
+        console.error("Health check failed:", error);
+    }
+}
+
+updateSystemHealth();
+setInterval(updateSystemHealth, 5000);
+
+
+async function updateExperimentHistory() {
+    const historyContainer =
+        document.getElementById("experiment-history");
+
+    if (!historyContainer) return;
+
+    try {
+        const response = await fetch("/api/chaos/experiments", {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const experiments = data.experiments;
+
+        // Update total experiments
+        document.getElementById("experiment-count").textContent =
+            experiments.length;
+
+        // Clear previous history
+        historyContainer.replaceChildren();
+
+        if (experiments.length === 0) {
+            document.getElementById("experiment-availability").textContent = "--";
+            document.getElementById("experiment-latency").textContent = "--";
+            document.getElementById("experiment-fallbacks").textContent = "--";
+
+            historyContainer.textContent =
+                "No chaos experiments recorded yet.";
+            return;
+        }
+
+        // The last saved experiment is the latest
+        const latest = experiments[experiments.length - 1];
+        const report = latest.report;
+
+        document.getElementById("experiment-availability").textContent =
+            `${report.availability_rate}%`;
+
+        document.getElementById("experiment-latency").textContent =
+            `${report.average_latency_ms} ms`;
+
+        document.getElementById("experiment-fallbacks").textContent =
+            report.cache_fallbacks;
+
+        // Display newest experiments first
+        const newestFirst = [...experiments].reverse();
+
+        for (const experiment of newestFirst) {
+            const item = document.createElement("div");
+            item.className = "experiment-item";
+
+            const title = document.createElement("strong");
+            title.textContent =
+                `Experiment ${experiment.experiment_id.slice(0, 8)}`;
+
+            const details = document.createElement("p");
+            details.textContent =
+                `Availability: ${experiment.report.availability_rate}% | ` +
+                `Average latency: ${experiment.report.average_latency_ms} ms | ` +
+                `P95 latency: ${experiment.report.p95_latency_ms} ms | ` +
+                `Cache fallbacks: ${experiment.report.cache_fallbacks}`;
+
+            item.append(title, details);
+            historyContainer.appendChild(item);
+        }
+
+    } catch (error) {
+        console.error("Experiment history update failed:", error);
+        historyContainer.textContent =
+            "Unable to load experiment history.";
+    }
+}
+
+// Load experiment history when the dashboard opens
+updateExperimentHistory();
+
+// Refresh every 10 seconds
+setInterval(updateExperimentHistory, 10000);
+
+
+// Live HTTP request latency metrics
+async function updateLatencyMetrics() {
+    try {
+        const response = await fetch("/api/metrics/latency", {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        document.getElementById("latency-average").textContent =
+            `${data.average_latency_ms.toFixed(2)} ms`;
+
+        document.getElementById("latency-p95").textContent =
+            `${data.p95_latency_ms.toFixed(2)} ms`;
+
+        document.getElementById("latency-max").textContent =
+            `${data.max_latency_ms.toFixed(2)} ms`;
+
+        document.getElementById("latency-slow").textContent =
+            data.slow_requests;
+
+        document.getElementById("latency-total").textContent =
+            data.total_requests;
+
+    } catch (error) {
+        console.error("Latency metrics update failed:", error);
+    }
+}
+
+// Load latency metrics when the dashboard opens
+updateLatencyMetrics();
+
+// Refresh every 2 seconds
+setInterval(updateLatencyMetrics, 2000);
