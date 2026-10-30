@@ -134,6 +134,48 @@ def simulate_failure():
     }), 200
 
 
+@app.route("/health/live", methods=["GET"])
+def health_live():
+    """Check whether the Flask application is running."""
+    return jsonify({
+        "status": "alive",
+        "service": "faultforge"
+    }), 200
+
+
+@app.route("/health/ready", methods=["GET"])
+def health_ready():
+    """Check whether FaultForge can serve requests."""
+
+    with app.test_client() as client:
+        response = client.get("/api/services")
+
+    if response.status_code != 200:
+        return jsonify({
+            "status": "not_ready",
+            "reason": "Service check failed"
+        }), 503
+
+    data = response.get_json() or {}
+    system_status = data.get("system_status")
+
+    if system_status == "healthy":
+        return jsonify({
+            "status": "ready",
+            "system_status": "healthy"
+        }), 200
+
+    if system_status == "degraded":
+        return jsonify({
+            "status": "ready",
+            "system_status": "degraded"
+        }), 200
+
+    return jsonify({
+        "status": "not_ready",
+        "system_status": system_status or "unknown"
+    }), 503
+
 @app.route("/api/monitoring")
 def monitoring():
     recovery_remaining = 0
