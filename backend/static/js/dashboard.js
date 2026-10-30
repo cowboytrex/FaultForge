@@ -11,8 +11,7 @@ async function updateDashboard() {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        const data = await response.json();
-        const breaker = data.circuit_breaker;
+
 
         // Update circuit breaker state
         const stateElement = document.getElementById("breaker-state");
