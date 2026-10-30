@@ -5,12 +5,14 @@ import uuid
 import requests
 
 from backend.chaos_report import generate_chaos_report
-
+from backend.experiment_store import save_experiment
 
 def run_chaos_experiment(
     base_url="http://127.0.0.1:5001",
     total_requests=20,
+    save=False,
 ):
+    
     """Run an experiment and summarize its HTTP responses."""
 
     if not isinstance(total_requests, int) or isinstance(total_requests, bool):
@@ -53,7 +55,7 @@ def run_chaos_experiment(
                 "latency_ms": round(latency_ms, 2),
             })
 
-    return {
+        experiment = {
         "experiment_id": experiment_id,
         "configuration": {
             "base_url": base_url,
@@ -62,3 +64,7 @@ def run_chaos_experiment(
         "report": generate_chaos_report(results),
         "results": results,
     }
+    if save:
+        save_experiment(experiment)
+
+    return experiment

@@ -12,6 +12,9 @@ async function updateDashboard() {
         }
 
 
+        const data = await response.json();
+        const breaker = data.circuit_breaker;
+
 
         // Update circuit breaker state
         const stateElement = document.getElementById("breaker-state");
@@ -394,3 +397,87 @@ async function updateSystemHealth() {
 
 updateSystemHealth();
 setInterval(updateSystemHealth, 5000);
+
+
+async function updateExperimentHistory() {
+    const historyContainer =
+        document.getElementById("experiment-history");
+
+    if (!historyContainer) return;
+
+    try {
+        const response = await fetch("/api/chaos/experiments", {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const experiments = data.experiments;
+
+        // Update total experiments
+        document.getElementById("experiment-count").textContent =
+            experiments.length;
+
+        // Clear previous history
+        historyContainer.replaceChildren();
+
+        if (experiments.length === 0) {
+            document.getElementById("experiment-availability").textContent = "--";
+            document.getElementById("experiment-latency").textContent = "--";
+            document.getElementById("experiment-fallbacks").textContent = "--";
+
+            historyContainer.textContent =
+                "No chaos experiments recorded yet.";
+            return;
+        }
+
+        // The last saved experiment is the latest
+        const latest = experiments[experiments.length - 1];
+        const report = latest.report;
+
+        document.getElementById("experiment-availability").textContent =
+            `${report.availability_rate}%`;
+
+        document.getElementById("experiment-latency").textContent =
+            `${report.average_latency_ms} ms`;
+
+        document.getElementById("experiment-fallbacks").textContent =
+            report.cache_fallbacks;
+
+        // Display newest experiments first
+        const newestFirst = [...experiments].reverse();
+
+        for (const experiment of newestFirst) {
+            const item = document.createElement("div");
+            item.className = "experiment-item";
+
+            const title = document.createElement("strong");
+            title.textContent =
+                `Experiment ${experiment.experiment_id.slice(0, 8)}`;
+
+            const details = document.createElement("p");
+            details.textContent =
+                `Availability: ${experiment.report.availability_rate}% | ` +
+                `Average latency: ${experiment.report.average_latency_ms} ms | ` +
+                `P95 latency: ${experiment.report.p95_latency_ms} ms | ` +
+                `Cache fallbacks: ${experiment.report.cache_fallbacks}`;
+
+            item.append(title, details);
+            historyContainer.appendChild(item);
+        }
+
+    } catch (error) {
+        console.error("Experiment history update failed:", error);
+        historyContainer.textContent =
+            "Unable to load experiment history.";
+    }
+}
+
+// Load experiment history when the dashboard opens
+updateExperimentHistory();
+
+// Refresh every 10 seconds
+setInterval(updateExperimentHistory, 10000);

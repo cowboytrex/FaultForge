@@ -13,6 +13,7 @@ from metrics import calculate_metrics
 from metrics import calculate_metrics, calculate_daily_trends
 from dependency_monitor import check_dependencies
 from chaos_engine import chaos_engine
+from backend.experiment_store import load_experiments
 
 
 app = Flask(__name__)
@@ -294,3 +295,25 @@ if __name__ == "__main__":
         debug=True,
         use_reloader=False
     )
+
+
+@app.route("/api/chaos/experiments", methods=["GET"])
+def get_chaos_experiments():
+    """Return saved chaos engineering experiments."""
+    try:
+        experiments = load_experiments()
+
+        return jsonify({
+            "total": len(experiments),
+            "experiments": experiments,
+        }), 200
+
+    except (OSError, ValueError) as error:
+        app.logger.error(
+            "Failed to load experiment history: %s",
+            error,
+        )
+
+        return jsonify({
+            "error": "Unable to load experiment history"
+        }), 500

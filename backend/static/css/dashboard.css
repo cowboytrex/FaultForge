@@ -625,3 +625,104 @@ button:focus-visible {
     color: #94a3b8;
     background: rgba(148, 163, 184, 0.08);
 }
+
+
+/* Chaos Experiment History */
+
+#experiment-history {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.experiment-item {
+    padding: 16px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-left: 4px solid #38bdf8;
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.experiment-item:hover {
+    border-color: #38bdf8;
+}
+
+.experiment-item strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #f8fafc;
+    font-size: 15px;
+}
+
+.experiment-item p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+    .experiment-item {
+        padding: 12px;
+    }
+
+    .experiment-item p {
+        font-size: 13px;
+    }
+}
+
+
+/* Experiment History Layout Fix */
+
+/* Make the history section occupy the full dashboard width */
+.dashboard > .monitoring-card:has(#experiment-history) {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    grid-column: 1 / -1;
+}
+
+/* Arrange metric cards in responsive columns */
+.dashboard > .monitoring-card:has(#experiment-history) .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+}
+
+/* Prevent metric cards from overlapping */
+.dashboard > .monitoring-card:has(#experiment-history) .metric-card {
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Keep the experiment list within its container */
+#experiment-history {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.experiment-item {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+    .dashboard > .monitoring-card:has(#experiment-history) .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .dashboard > .monitoring-card:has(#experiment-history) .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}

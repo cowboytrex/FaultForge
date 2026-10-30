@@ -75,3 +75,25 @@ def test_connection_error(mock_get):
 def test_invalid_request_count(count):
     with pytest.raises(ValueError):
         run_chaos_experiment(total_requests=count)
+
+
+@patch("backend.chaos_runner.save_experiment")
+@patch("backend.chaos_runner.requests.get")
+def test_experiment_is_saved(mock_get, mock_save):
+    response = Mock()
+    response.status_code = 200
+    response.json.return_value = {
+        "source": "primary",
+        "system_status": "healthy",
+    }
+    mock_get.return_value = response
+
+    experiment = run_chaos_experiment(
+        total_requests=3,
+        save=True,
+    )
+
+    mock_save.assert_called_once_with(experiment)
+
+    assert experiment["report"]["total_requests"] == 3
+    assert experiment["report"]["primary_successes"] == 3
