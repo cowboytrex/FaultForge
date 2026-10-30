@@ -516,8 +516,91 @@ async function updateLatencyMetrics() {
     }
 }
 
+
+let latencyHistoryChart = null;
+
+async function updateLatencyHistoryChart() {
+    try {
+        const response = await fetch("/api/metrics/latency/history");
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch latency history");
+        }
+
+        const data = await response.json();
+
+        // Display the most recent 50 requests.
+        const samples = data.history.slice(-50);
+
+        const labels = samples.map(sample =>
+            new Date(sample.timestamp).toLocaleTimeString()
+        );
+
+        const durations = samples.map(sample =>
+            sample.duration_ms
+        );
+
+        if (!latencyHistoryChart) {
+            const canvas = document.getElementById("latencyHistoryChart");
+
+            if (!canvas || typeof Chart === "undefined") {
+                return;
+            }
+
+            latencyHistoryChart = new Chart(canvas, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Request Latency (ms)",
+                        data: durations,
+                        borderColor: "#38bdf8",
+                        backgroundColor: "rgba(56, 189, 248, 0.15)",
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "Latency (ms)"
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Request Time"
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            latencyHistoryChart.data.labels = labels;
+            latencyHistoryChart.data.datasets[0].data = durations;
+            latencyHistoryChart.update();
+        }
+
+    } catch (error) {
+        console.error("Latency history chart update failed:", error);
+    }
+}
+
+// Load immediately and refresh every 5 seconds.
+updateLatencyHistoryChart();
+setInterval(updateLatencyHistoryChart, 5000);
+
 // Load latency metrics when the dashboard opens
 updateLatencyMetrics();
 
 // Refresh every 2 seconds
 setInterval(updateLatencyMetrics, 2000);
+

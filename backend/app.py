@@ -46,6 +46,18 @@ def latency_metrics_api():
     """Return performance metrics for recent HTTP requests."""
     return jsonify(latency_collector.metrics())
 
+
+@app.route("/api/metrics/latency/history")
+def latency_history_api():
+    """Return timestamped HTTP request latency samples."""
+    history = latency_collector.history()
+
+    return jsonify({
+        "total": len(history),
+        "history": history,
+    })
+
+
 @app.route("/")
 def home():
     return jsonify({
@@ -325,3 +337,4 @@ def get_chaos_experiments():
         return jsonify({
             "error": "Unable to load experiment history"
         }), 500
+

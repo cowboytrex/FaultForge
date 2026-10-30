@@ -133,11 +133,23 @@
                 </div>
             </div>
 
-            <p>
-                Requests measured:
-                <span id="latency-total">--</span>
-            </p>
+                
+        <p>
+            Requests measured:
+            <span id="latency-total">--</span>
+        </p>
+
+        <div class="latency-chart-section">
+            <h3>Request Latency Over Time</h3>
+            <p>Recent HTTP request response times in milliseconds.</p>
+
+            <div class="chart-container">
+                <canvas id="latencyHistoryChart"></canvas>
+            </div>
+        </div>
+
         </section>
+
 
 
         <!-- Chaos Engineering Experiment History -->
