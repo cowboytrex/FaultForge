@@ -10,52 +10,54 @@ sys.path.insert(
 
 import app as flask_module
 
+
 @pytest.mark.parametrize(
-    "system_status, expected_http, expected_status",
+    "database_available, cache_available, expected_http, expected_status",
     [
-        ("healthy", 200, "ready"),
-        ("degraded", 200, "ready"),
-        ("unavailable", 503, "not_ready"),
+        (True, False, 200, "healthy"),
+        (False, True, 200, "degraded"),
+        (False, False, 503, "unavailable"),
     ],
 )
 def test_readiness_status(
     monkeypatch,
-    system_status,
+    database_available,
+    cache_available,
     expected_http,
     expected_status,
 ):
-    flask_module.app.config["TESTING"] = True
+    """Test readiness under different dependency conditions."""
 
-    class FakeResponse:
-        status_code = 200
+    def fake_database_check():
+        if not database_available:
+            raise ConnectionError("Database unavailable")
+        return []
 
-        def get_json(self):
-            return {"system_status": system_status}
-
-    class FakeClient:
-        def get(self, path):
-            assert path == "/api/services"
-            return FakeResponse()
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            return False
+    def fake_cache_check():
+        if cache_available:
+            return [{"id": 1, "name": "Test"}]
+        return None
 
     monkeypatch.setattr(
-        flask_module.app,
-        "test_client",
-        lambda: FakeClient(),
+        flask_module,
+        "get_services_from_db",
+        fake_database_check,
     )
 
-    with flask_module.app.test_request_context(
-        "/health/ready"
-    ):
-        response, status_code = flask_module.health_ready()
+    monkeypatch.setattr(
+        flask_module,
+        "get_cached_services",
+        fake_cache_check,
+    )
 
-    assert status_code == expected_http
-    assert response.get_json()["status"] == expected_status
+    with flask_module.app.test_client() as client:
+        response = client.get("/health/ready")
+
+    assert response.status_code == expected_http
+    assert (
+        response.get_json()["system_status"]
+        == expected_status
+    )
 
 
 def test_liveness_endpoint():
@@ -73,3 +75,40 @@ def test_liveness_has_request_id():
 
     assert response.status_code == 200
     assert "X-Request-ID" in response.headers
+
+
+def test_readiness_does_not_change_circuit_breaker(monkeypatch):
+    """Readiness checks must not modify circuit-breaker state."""
+
+    def failing_database():
+        raise ConnectionError("Database unavailable")
+
+    def empty_cache():
+        return None
+
+    monkeypatch.setattr(
+        flask_module,
+        "get_services_from_db",
+        failing_database,
+    )
+
+    monkeypatch.setattr(
+        flask_module,
+        "get_cached_services",
+        empty_cache,
+    )
+
+    # Capture the circuit breaker's current state.
+    breaker = flask_module.db_breaker
+
+    original_state = breaker.state
+    original_failure_count = breaker.failure_count
+
+    with flask_module.app.test_client() as client:
+        response = client.get("/health/ready")
+
+    assert response.status_code == 503
+
+    # A readiness probe must not trigger the circuit breaker.
+    assert breaker.state == original_state
+    assert breaker.failure_count == original_failure_count

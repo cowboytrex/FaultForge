@@ -11,6 +11,7 @@ from event_logger import log_event, get_events
 from request_tracking import register_request_tracking
 from metrics import calculate_metrics
 from metrics import calculate_metrics, calculate_daily_trends
+from dependency_monitor import check_dependencies
 
 
 app = Flask(__name__)
@@ -143,38 +144,25 @@ def health_live():
     }), 200
 
 
+
 @app.route("/health/ready", methods=["GET"])
 def health_ready():
-    """Check whether FaultForge can serve requests."""
+    """Check readiness without modifying circuit-breaker state."""
 
-    with app.test_client() as client:
-        response = client.get("/api/services")
+    def database_check():
+        get_services_from_db()
+        return True
 
-    if response.status_code != 200:
-        return jsonify({
-            "status": "not_ready",
-            "reason": "Service check failed"
-        }), 503
+    def cache_check():
+        return get_cached_services() is not None
 
-    data = response.get_json() or {}
-    system_status = data.get("system_status")
+    result, status_code = check_dependencies(
+        database_check=database_check,
+        cache_check=cache_check,
+    )
 
-    if system_status == "healthy":
-        return jsonify({
-            "status": "ready",
-            "system_status": "healthy"
-        }), 200
+    return jsonify(result), status_code
 
-    if system_status == "degraded":
-        return jsonify({
-            "status": "ready",
-            "system_status": "degraded"
-        }), 200
-
-    return jsonify({
-        "status": "not_ready",
-        "system_status": system_status or "unknown"
-    }), 503
 
 @app.route("/api/monitoring")
 def monitoring():
