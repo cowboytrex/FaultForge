@@ -767,3 +767,248 @@ button:focus-visible {
         grid-row: auto;
     }
 }
+
+.latency-chart-section {
+    margin-top: 24px;
+    width: 100%;
+    min-width: 0;
+}
+
+
+/* Milestone 21 — Latency History Chart */
+
+.dashboard > .metrics-section:has(#latency-average) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.latency-chart-section {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin-top: 28px;
+    padding: 20px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+.latency-chart-section .chart-container {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 320px;
+    min-width: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.latency-chart-section canvas {
+    display: block;
+    max-width: 100%;
+}
+
+
+
+/* Milestone 21: Ensure live latency performance spans the dashboard */
+.dashboard > .metrics-section:has(#latency-average) {
+    width: 100%;
+    min-width: 0;
+}
+
+/* Give the latency chart its own full-width block */
+.dashboard > .metrics-section:has(#latency-average) .latency-chart-section {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    grid-column: 1 / -1;
+}
+
+/* Keep the chart responsive inside its parent */
+.dashboard > .metrics-section:has(#latency-average) .latency-chart-section .chart-container {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Milestone 21 — Full-width latency chart layout */
+
+.dashboard > .metrics-section:has(#latency-average) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+
+.dashboard > .metrics-section:has(#latency-average) .latency-chart-section {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin-top: 24px;
+    box-sizing: border-box;
+}
+
+.dashboard > .metrics-section:has(#latency-average) .chart-container {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+
+/* Milestone 21 — Performance Alert Status */
+
+.performance-alert {
+    margin-top: 24px;
+    padding: 20px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+}
+
+.performance-alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.performance-alert-header h3 {
+    margin: 0;
+}
+
+.alert-status {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.alert-status.healthy {
+    background: #14532d;
+    color: #86efac;
+}
+
+.alert-status.warning {
+    background: #713f12;
+    color: #fde68a;
+}
+
+.alert-status.critical {
+    background: #7f1d1d;
+    color: #fca5a5;
+}
+
+.alert-status.no-data {
+    background: #334155;
+    color: #cbd5e1;
+}
+
+.performance-alert-details {
+    margin-top: 12px;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+
+/* Milestone 21 — Performance Alert History */
+
+.performance-alert-history {
+    margin-top: 20px;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+}
+
+.performance-alert-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.performance-alert-history-header h3 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 18px;
+}
+
+#alert-history-count {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.performance-alert-history > p {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+#performance-alert-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#performance-alert-history-list > p {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.alert-history-item {
+    padding: 14px 16px;
+    background: #0f172a;
+    border-left: 4px solid #64748b;
+    border-radius: 8px;
+}
+
+.alert-history-item.healthy {
+    border-left-color: #22c55e;
+}
+
+.alert-history-item.warning {
+    border-left-color: #f59e0b;
+}
+
+.alert-history-item.critical {
+    border-left-color: #ef4444;
+}
+
+.alert-history-item.no-data {
+    border-left-color: #64748b;
+}
+
+.alert-history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.alert-history-item-header strong {
+    color: #f8fafc;
+}
+
+.alert-history-item-time {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.alert-history-item-details {
+    color: #cbd5e1;
+    font-size: 13px;
+    margin-top: 8px;
+}
