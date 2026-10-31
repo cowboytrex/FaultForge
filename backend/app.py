@@ -60,6 +60,24 @@ def latency_history_api():
     })
 
 
+@app.route("/api/health/alert-storage")
+def alert_storage_health_api():
+    """Report the health of SQLite alert storage."""
+    try:
+        repository = AlertRepository()
+        is_healthy = repository.health_check()
+    except Exception:
+        app.logger.exception("Alert storage health check failed")
+        is_healthy = False
+
+    result = {
+        "service": "alert_storage",
+        "status": "healthy" if is_healthy else "unhealthy",
+        "database": "sqlite",
+    }
+
+    return jsonify(result), 200 if is_healthy else 503
+
 
 @app.route("/api/metrics/latency/alert")
 def latency_alert_api():
@@ -81,11 +99,19 @@ def latency_alert_api():
             critical_threshold_ms=500,
         )
 
-    # Record only when the alert status changes.
-    alert_history.record(
-        status=result["status"],
-        p95_latency_ms=result["p95_latency_ms"],
-    )
+
+    # Record alert transitions without breaking the monitoring API
+    # if SQLite storage becomes unavailable.
+    try:
+        alert_history.record(
+            status=result["status"],
+            p95_latency_ms=result["p95_latency_ms"],
+        )
+    except Exception:
+        app.logger.exception(
+            "Failed to persist latency alert transition"
+        )
+
 
     return jsonify(result)
 

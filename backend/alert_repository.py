@@ -90,6 +90,50 @@ class AlertRepository:
             return cursor.rowcount
 
     
+    
+    
+    def health_check(self):
+        """Check whether alert storage supports reads and writes."""
+        try:
+            with self._connect() as connection:
+                connection.execute(
+                    "SELECT COUNT(*) FROM alert_events"
+                ).fetchone()
+
+                # Perform a write without permanently changing data.
+                connection.execute("SAVEPOINT health_check")
+                try:
+                    connection.execute(
+                        """
+                        INSERT INTO alert_events (
+                            timestamp,
+                            status,
+                            previous_status,
+                            p95_latency_ms
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                        (
+                            "health-check",
+                            "healthy",
+                            None,
+                            None,
+                        ),
+                    )
+                finally:
+                    connection.execute(
+                        "ROLLBACK TO SAVEPOINT health_check"
+                    )
+                    connection.execute(
+                        "RELEASE SAVEPOINT health_check"
+                    )
+
+            return True
+
+        except sqlite3.Error:
+            return False
+
+
+
     def history(self, limit=100, status=None):
         """Retrieve recent alerts, optionally filtered by status."""
         if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1:

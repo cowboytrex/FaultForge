@@ -216,3 +216,69 @@ def test_save_rolls_back_when_retention_fails(tmp_path):
 
     assert len(events) == 1001
     assert events[-1]["p95_latency_ms"] == 999.0
+
+
+def test_repository_health_check(tmp_path):
+    """A working SQLite database should pass its health check."""
+    repository = AlertRepository(tmp_path / "health.db")
+
+    assert repository.health_check() is True
+
+
+def test_repository_health_check_missing_table(tmp_path):
+    """Health check should fail when the alert table is missing."""
+    import sqlite3
+
+    repository = AlertRepository(tmp_path / "missing_table.db")
+
+    # Simulate a damaged or incomplete database schema.
+    with sqlite3.connect(repository.db_path) as connection:
+        connection.execute("DROP TABLE alert_events")
+
+    assert repository.health_check() is False
+
+
+
+def test_repository_health_check_read_only_database(
+    tmp_path, monkeypatch
+):
+    """Health check should fail if SQLite rejects writes."""
+    import sqlite3
+
+    repository = AlertRepository(tmp_path / "readonly.db")
+
+    def read_only_connection():
+        return sqlite3.connect(
+            f"file:{repository.db_path}?mode=ro",
+            uri=True,
+        )
+
+    monkeypatch.setattr(
+        repository,
+        "_connect",
+        read_only_connection,
+    )
+
+    assert repository.health_check() is False
+
+
+def test_health_check_does_not_modify_alert_history(tmp_path):
+    """Health checks must not add or remove real alert events."""
+    repository = AlertRepository(tmp_path / "health_integrity.db")
+
+    # Create two real alert transitions.
+    repository.save(make_event("healthy"))
+    repository.save(make_event("warning"))
+
+    # Capture the database contents before the health check.
+    events_before = repository.history()
+
+    # Run the health check multiple times.
+    for _ in range(5):
+        assert repository.health_check() is True
+
+    # The alert history must remain unchanged.
+    events_after = repository.history()
+
+    assert events_after == events_before
+    assert len(events_after) == 2

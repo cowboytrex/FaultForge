@@ -136,3 +136,42 @@ def test_failed_database_save_does_not_update_memory(tmp_path, monkeypatch):
     saved_events = AlertRepository(tmp_path / "failure.db").history()
     assert len(saved_events) == 1
     assert saved_events[0]["status"] == "healthy"
+
+
+def test_alert_history_recovers_after_database_failure(tmp_path, monkeypatch):
+    """Alert history should recover after a temporary database failure."""
+    repository = AlertRepository(tmp_path / "recovery.db")
+    history = AlertHistory(repository=repository)
+
+    # 1. Normal operation
+    assert history.record("healthy", 100.0) is True
+
+    original_save = repository.save
+
+    # 2. Simulate a temporary database failure
+    def failing_save(event):
+        raise OSError("Database temporarily unavailable")
+
+    monkeypatch.setattr(repository, "save", failing_save)
+
+    import pytest
+
+    with pytest.raises(OSError, match="Database temporarily unavailable"):
+        history.record("critical", 600.0)
+
+    # Failed transition should not update memory or SQLite.
+    assert len(history.history()) == 1
+    assert len(repository.history()) == 1
+
+    # 3. Restore normal database operation
+    monkeypatch.setattr(repository, "save", original_save)
+
+    # Retry the critical transition
+    assert history.record("critical", 600.0) is True
+
+    events = repository.history()
+
+    assert len(events) == 2
+    assert events[0]["status"] == "healthy"
+    assert events[1]["status"] == "critical"
+    assert events[1]["previous_status"] == "healthy"
