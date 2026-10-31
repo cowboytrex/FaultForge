@@ -7,8 +7,8 @@ from backend.app import app
 def test_alert_history_api_empty():
     """The endpoint should handle an empty alert history."""
 
-    with patch("backend.app.alert_history") as mock_history:
-        mock_history.history.return_value = []
+    with patch("backend.app.AlertRepository") as mock_repository:
+        mock_repository.return_value.history.return_value = []
 
         with app.test_client() as client:
             response = client.get(
@@ -40,8 +40,8 @@ def test_alert_history_api_returns_events():
         },
     ]
 
-    with patch("backend.app.alert_history") as mock_history:
-        mock_history.history.return_value = events
+    with patch("backend.app.AlertRepository") as mock_repository:
+        mock_repository.return_value.history.return_value = events
 
         with app.test_client() as client:
             response = client.get(
@@ -60,8 +60,8 @@ def test_alert_history_api_returns_events():
 def test_alert_history_api_returns_json():
     """The response should have a JSON content type."""
 
-    with patch("backend.app.alert_history") as mock_history:
-        mock_history.history.return_value = []
+    with patch("backend.app.AlertRepository") as mock_repository:
+        mock_repository.return_value.history.return_value = []
 
         with app.test_client() as client:
             response = client.get(

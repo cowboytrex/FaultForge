@@ -9,13 +9,13 @@ from fallback import save_to_cache, get_cached_services
 from circuit_breaker import CircuitBreaker, CircuitOpenError
 from event_logger import log_event, get_events
 from request_tracking import register_request_tracking
-from metrics import calculate_metrics
 from metrics import calculate_metrics, calculate_daily_trends
 from dependency_monitor import check_dependencies
 from chaos_engine import chaos_engine
 from latency_collector import latency_collector
 from backend.experiment_store import load_experiments
 from backend.alert_history import alert_history
+from backend.alert_repository import AlertRepository
 from backend.performance_alerts import evaluate_latency_alert
 
 
@@ -90,15 +90,35 @@ def latency_alert_api():
     return jsonify(result)
 
 
+
 @app.route("/api/metrics/latency/alerts/history")
 def latency_alert_history_api():
-    """Return recorded performance alert transitions."""
-    events = alert_history.history()
+    """Return persistent performance alert transitions."""
+    status = request.args.get("status")
+    limit_value = request.args.get("limit", "100")
+
+    try:
+        limit = int(limit_value)
+
+        if not 1 <= limit <= 1000:
+            raise ValueError("limit out of range")
+
+        repository = AlertRepository()
+        events = repository.history(
+            limit=limit,
+            status=status,
+        )
+
+    except ValueError:
+        return jsonify({
+            "error": "Invalid status or limit. Limit must be between 1 and 1000."
+        }), 400
 
     return jsonify({
         "total": len(events),
         "history": events,
     })
+
 
 
 @app.route("/")
