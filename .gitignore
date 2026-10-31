@@ -57,8 +57,10 @@ cover/
 .env.*
 !.env.example
 
+# Local SQLite database files
 data/*.db
-
+data/*.db-wal
+data/*.db-shm
 # Translations
 *.mo
 *.pot
