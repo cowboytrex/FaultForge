@@ -5,6 +5,23 @@ A fault-tolerant REST API with automated recovery, monitoring, and CI/CD.
 
 FaultForge is a reliability engineering project built with Python and Flask. It demonstrates how backend systems respond to simulated failures using fault injection, circuit breakers, recovery mechanisms, and monitoring.
 
+
+## Dashboard Preview
+
+![FaultForge Dashboard](docs/screenshots/dashboard-overview.png)
+
+### Circuit Breaker in Action
+
+![Circuit Breaker Open](docs/screenshots/circuit-breaker-open.png)
+
+![Circuit Breaker Recovery](docs/screenshots/circuit-breaker-recovery.png)
+
+### Monitoring and Experiments
+
+![Performance Alert History](docs/screenshots/alert-history.png)
+
+![Chaos Experiment History](docs/screenshots/chaos-experiments.png)
+
 ## Features
 
 - REST API built with Flask
