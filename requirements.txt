@@ -1,7 +1,8 @@
-flask
-pytest
-psycopg[binary]
-redis
-fakeredis
-pytest-cov>=7.0,<8.0
+
+Flask==3.1.3
+pytest==9.2.0
+psycopg[binary]==3.3.6
+redis==8.1.0
+fakeredis==2.40.0
+pytest-cov==7.1.0
 requests==2.34.2
